@@ -1,0 +1,335 @@
+!DOCTYPE html>
+<html>
+<head>
+<title>Reflective Growth Journal</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#FFF9C4;
+margin:0;
+}
+
+header{
+background:#FFD54F;
+padding:20px;
+text-align:center;
+}
+
+.container{
+width:420px;
+margin:auto;
+background:white;
+padding:30px;
+margin-top:40px;
+border-radius:10px;
+}
+
+input,textarea{
+width:100%;
+padding:10px;
+margin:10px 0;
+border:1px solid #ccc;
+}
+
+button{
+background:#FFD54F;
+border:none;
+padding:12px;
+width:100%;
+cursor:pointer;
+}
+
+button:hover{
+background:#FFC107;
+}
+
+.entryCard{
+background:#FFFDE7;
+padding:10px;
+margin-top:10px;
+border-left:4px solid #FFD54F;
+}
+
+#reflectionPage,#growthPage{
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🌼 Reflective Journal</h1>
+<p>Track your growth and self-improvement</p>
+</header>
+
+<div class="container" id="registerPage">
+
+<h2>Create Your Journal</h2>
+
+<form id="registerForm">
+
+<label>Name</label>
+<input type="text" id="name" required>
+
+<label>Email</label>
+<input type="email" required>
+
+<label>Password</label>
+<input type="password" required>
+
+<button type="submit">Start Journey</button>
+
+</form>
+
+</div>
+
+<div class="container" id="reflectionPage">
+
+<h2>Day Reflection</h2>
+
+<form id="dayForm">
+
+<label>How was your day?</label>
+<textarea id="day"></textarea>
+
+<label>What happened today?</label>
+<textarea id="events"></textarea>
+
+<button type="submit">Next</button>
+
+</form>
+
+</div>
+
+<div class="container" id="growthPage">
+
+<h2>Self Reflection</h2>
+
+<form id="growthForm">
+
+<label>How do you feel?</label>
+<input type="text" id="mood">
+
+<label>What changes do you want?</label>
+<textarea id="changes"></textarea>
+
+<label>What did you learn?</label>
+<textarea id="learning"></textarea>
+
+<label>How do you want to mould yourself?</label>
+<textarea id="future"></textarea>
+
+<button type="submit">Save Entry</button>
+
+</form>
+
+<button onclick="undoEntry()">Undo Last Entry</button>
+
+<input type="text" id="searchText" placeholder="Search reflection">
+<button onclick="searchEntry()">Search</button>
+
+<h3>Journal Entries</h3>
+<div id="entryList"></div>
+
+</div>
+
+<script>
+
+let entries=[]
+
+/* STACK for undo */
+let undoStack=[]
+
+/* HASH MAP for quick lookup */
+let entryHash={}
+
+/* QUEUE for reminders */
+let reminderQueue=[]
+
+let tempDay=""
+let tempEvents=""
+
+/* registration */
+
+document.getElementById("registerForm").addEventListener("submit",function(e){
+
+e.preventDefault()
+
+document.getElementById("registerPage").style.display="none"
+document.getElementById("reflectionPage").style.display="block"
+
+})
+
+/* day reflection */
+
+document.getElementById("dayForm").addEventListener("submit",function(e){
+
+e.preventDefault()
+
+tempDay=document.getElementById("day").value
+tempEvents=document.getElementById("events").value
+
+document.getElementById("reflectionPage").style.display="none"
+document.getElementById("growthPage").style.display="block"
+
+})
+
+/* save journal */
+
+document.getElementById("growthForm").addEventListener("submit",function(e){
+
+e.preventDefault()
+
+let mood=document.getElementById("mood").value
+let changes=document.getElementById("changes").value
+let learning=document.getElementById("learning").value
+let future=document.getElementById("future").value
+
+let entry={
+date:new Date().toLocaleDateString(),
+day:tempDay,
+events:tempEvents,
+mood:mood,
+changes:changes,
+learning:learning,
+future:future
+}
+
+/* push to array list */
+entries.push(entry)
+
+/* stack push for undo */
+undoStack.push(entry)
+
+/* hash table */
+entryHash[entry.date]=entry
+
+displayEntries()
+
+})
+
+/* display entries */
+
+function displayEntries(){
+
+let list=document.getElementById("entryList")
+list.innerHTML=""
+
+let sorted=mergeSort(entries)
+
+sorted.forEach(function(e){
+
+let div=document.createElement("div")
+div.className="entryCard"
+
+div.innerHTML=
+
+"<b>Date:</b> "+e.date+"<br>"+
+"<b>Day:</b> "+e.day+"<br>"+
+"<b>Events:</b> "+e.events+"<br>"+
+"<b>Mood:</b> "+e.mood+"<br>"+
+"<b>Changes:</b> "+e.changes+"<br>"+
+"<b>Learning:</b> "+e.learning+"<br>"+
+"<b>Future:</b> "+e.future
+
+list.appendChild(div)
+
+})
+
+}
+
+/* MERGE SORT */
+
+function mergeSort(arr){
+
+if(arr.length<=1) return arr
+
+let mid=Math.floor(arr.length/2)
+
+let left=mergeSort(arr.slice(0,mid))
+let right=mergeSort(arr.slice(mid))
+
+return merge(left,right)
+
+}
+
+function merge(left,right){
+
+let result=[]
+
+while(left.length && right.length){
+
+if(left[0].date<right[0].date)
+result.push(left.shift())
+else
+result.push(right.shift())
+
+}
+
+return result.concat(left,right)
+
+}
+
+/* LINEAR SEARCH */
+
+function searchEntry(){
+
+let keyword=document.getElementById("searchText").value
+
+for(let i=0;i<entries.length;i++){
+
+if(entries[i].learning.includes(keyword) || entries[i].day.includes(keyword))
+{
+alert("Found Entry on "+entries[i].date)
+return
+}
+
+}
+
+alert("No entry found")
+
+}
+
+/* STACK UNDO */
+
+function undoEntry(){
+
+if(undoStack.length==0)
+{
+alert("Nothing to undo")
+return
+}
+
+let last=undoStack.pop()
+
+entries.pop()
+
+displayEntries()
+
+}
+
+/* QUEUE reminder */
+
+function addReminder(task){
+
+reminderQueue.push(task)
+
+}
+
+function processReminder(){
+
+if(reminderQueue.length>0)
+{
+alert("Reminder: "+reminderQueue.shift())
+}
+
+}
+
+</script>
+
+</body>
+</html>
